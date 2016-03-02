@@ -1,6 +1,5 @@
 //
-//  XmlWriter.swift
-//  PurpleSwift
+//  XMLWriter.swift
 //
 //  Created by Robert Smallshire on 28/2/16.
 //  Copyright © 2016 Sixty North AS. All rights reserved.
