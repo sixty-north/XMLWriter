@@ -12,6 +12,9 @@ public enum XMLWriterError : ErrorType {
     case MismatchedEnd
     case StackUnderflow
     case InvalidComment
+    case TooFewRootElements
+    case TooManyRootElements
+    case NonWhitespaceTextAtDocumentRoot
 }
 
 protocol XMLWriterState
@@ -30,9 +33,10 @@ protocol XMLWriterState
     func endCData() throws
     func writeText(text: String) throws
     
-    func enter()
-    func exit()
+    func enter() throws
+    func exit() throws
 }
+
 
 class FragmentState : XMLWriterState {
     
@@ -43,7 +47,7 @@ class FragmentState : XMLWriterState {
     }
     
     func startDocument() throws {
-        writer.push(DocumentState(writer: writer))
+        try writer.push(DocumentState(writer: writer))
     }
     
     func endDocument() throws {
@@ -51,7 +55,7 @@ class FragmentState : XMLWriterState {
     }
     
     func startElement(name: String) throws {
-        writer.push(ElementState(writer: writer, name: name))
+        try writer.push(ElementState(writer: writer, name: name))
     }
     
     func endElement() throws {
@@ -67,7 +71,7 @@ class FragmentState : XMLWriterState {
     }
     
     func startComment() throws {
-        writer.push(CommentState(writer: writer))
+        try writer.push(CommentState(writer: writer))
     }
     
     func endComment() throws {
@@ -75,7 +79,7 @@ class FragmentState : XMLWriterState {
     }
     
     func startProcessingInstruction(target: String) throws {
-        writer.push(ProcessingInstructionState(writer: writer, target: target))
+        try writer.push(ProcessingInstructionState(writer: writer, target: target))
     }
     
     func endProcessingInstruction() throws {
@@ -83,7 +87,7 @@ class FragmentState : XMLWriterState {
     }
     
     func startCData() throws {
-        writer.push(CDataState(writer: writer))
+        try writer.push(CDataState(writer: writer))
     }
     
     func endCData() throws {
@@ -94,11 +98,11 @@ class FragmentState : XMLWriterState {
         throw XMLWriterError.BadHierarchy
     }
     
-    func enter() {
+    func enter() throws {
         // no-op
     }
     
-    func exit() {
+    func exit() throws {
         // no-op
     }
 }
@@ -107,8 +111,11 @@ class DocumentState : XMLWriterState {
     
     unowned let writer: XMLWriter
     
+    var numRootElements: Int
+    
     init(writer: XMLWriter) {
         self.writer = writer
+        self.numRootElements = 0
     }
     
     func startDocument() throws {
@@ -120,7 +127,8 @@ class DocumentState : XMLWriterState {
     }
     
     func startElement(name: String) throws {
-        writer.push(ElementState(writer: writer, name: name))
+        try ensureSingleRootElement()
+        try writer.push(ElementState(writer: writer, name: name))
     }
     
     func endElement() throws {
@@ -136,7 +144,7 @@ class DocumentState : XMLWriterState {
     }
     
     func startComment() throws {
-        writer.push(CommentState(writer: writer))
+        try writer.push(CommentState(writer: writer))
     }
     
     func endComment() throws {
@@ -144,7 +152,7 @@ class DocumentState : XMLWriterState {
     }
     
     func startProcessingInstruction(target: String) throws {
-        writer.push(ProcessingInstructionState(writer: writer, target: target))
+        try writer.push(ProcessingInstructionState(writer: writer, target: target))
     }
     
     func endProcessingInstruction() throws {
@@ -152,7 +160,7 @@ class DocumentState : XMLWriterState {
     }
     
     func startCData() throws {
-        writer.push(CDataState(writer: writer))
+        throw XMLWriterError.BadHierarchy
     }
     
     func endCData() throws {
@@ -160,15 +168,27 @@ class DocumentState : XMLWriterState {
     }
     
     func writeText(text: String) throws {
-        throw XMLWriterError.BadHierarchy
+        guard text.isEmptyOrWhiteSpace() else {
+            throw XMLWriterError.NonWhitespaceTextAtDocumentRoot
+        }
+        writer.writeRaw(text)
     }
     
-    func enter() {
+    func enter() throws {
         writer.writeRaw("<?xml version=\"1.0\" encoding=\"utf-8\" ?>")
     }
     
-    func exit() {
-        // no-op
+    func exit() throws {
+        if numRootElements < 1 {
+            throw XMLWriterError.TooFewRootElements
+        }
+    }
+    
+    func ensureSingleRootElement() throws {
+        ++numRootElements
+        if numRootElements > 1 {
+            throw XMLWriterError.TooManyRootElements
+        }
     }
 }
 
@@ -195,7 +215,7 @@ class ElementState : XMLWriterState {
     func startElement(name: String) throws
     {
         ensureStartTagClosed()
-        writer.push(ElementState(writer: writer, name: name))
+        try writer.push(ElementState(writer: writer, name: name))
     }
     
     func endElement() throws
@@ -207,7 +227,7 @@ class ElementState : XMLWriterState {
         if !isEmpty {
             throw XMLWriterError.BadHierarchy
         }
-        writer.push(AttributeState(writer: writer, name: name))
+        try writer.push(AttributeState(writer: writer, name: name))
     }
     
     func endAttribute() throws {
@@ -216,7 +236,7 @@ class ElementState : XMLWriterState {
     
     func startComment() throws {
         ensureStartTagClosed()
-        writer.push(CommentState(writer: writer))
+        try writer.push(CommentState(writer: writer))
     }
     
     func endComment() throws {
@@ -225,7 +245,7 @@ class ElementState : XMLWriterState {
     
     func startProcessingInstruction(target: String) throws {
         ensureStartTagClosed()
-        writer.push(ProcessingInstructionState(writer: writer, target: target))
+        try writer.push(ProcessingInstructionState(writer: writer, target: target))
     }
     
     func endProcessingInstruction() throws {
@@ -234,18 +254,18 @@ class ElementState : XMLWriterState {
     
     func startCData() throws {
         ensureStartTagClosed()
-        writer.push(CDataState(writer: writer))
+        try writer.push(CDataState(writer: writer))
     }
     
     func endCData() throws {
         throw XMLWriterError.BadHierarchy
     }
     
-    func enter() {
+    func enter() throws {
         writeOpenStartTag()
     }
     
-    func exit() {
+    func exit() throws {
         if isEmpty {
             writeCloseStartTagAsEmptyElement()
         }
@@ -347,11 +367,11 @@ class AttributeState : XMLWriterState {
         writer.writeRaw(escapedText)
     }
     
-    func enter() {
+    func enter() throws {
         writer.writeRaw(" \(name)=\"")
     }
     
-    func exit() {
+    func exit() throws {
         writer.writeRaw("\"")
     }
 }
@@ -399,7 +419,7 @@ class CommentState : XMLWriterState {
     }
     
     func startProcessingInstruction(target: String) throws {
-        writer.push(ProcessingInstructionState(writer: writer, target: target))
+        try writer.push(ProcessingInstructionState(writer: writer, target: target))
     }
     
     func endProcessingInstruction() throws {
@@ -427,11 +447,11 @@ class CommentState : XMLWriterState {
         writer.writeRaw(text)
     }
     
-    func enter() {
+    func enter() throws {
         writer.writeRaw("<!--")
     }
     
-    func exit() {
+    func exit() throws {
         writer.writeRaw("-->")
     }
     
@@ -464,7 +484,7 @@ class ProcessingInstructionState : XMLWriterState {
     }
     
     func startAttribute(name: String) throws {
-        writer.push(AttributeState(writer: writer, name: name))
+        try writer.push(AttributeState(writer: writer, name: name))
     }
     
     func endAttribute() throws {
@@ -501,11 +521,11 @@ class ProcessingInstructionState : XMLWriterState {
         writer.writeRaw(text)
     }
     
-    func enter() {
+    func enter() throws {
         writer.writeRaw("<?\(target)")
     }
     
-    func exit() {
+    func exit() throws {
         writer.writeRaw("?>")
     }
 }
@@ -575,11 +595,11 @@ class CDataState : XMLWriterState {
         writer.writeRaw(sanitizedText)
     }
     
-    func enter() {
+    func enter() throws {
         writer.writeRaw("<![CDATA[")
     }
     
-    func exit() {
+    func exit() throws {
         writer.writeRaw("]]>")
     }
 }
@@ -590,14 +610,25 @@ public class XMLWriter {
     
     private var stack: [XMLWriterState]
     
-    public init(stream: OutputStreamType) {
+    public class func createDocument(stream: OutputStreamType) -> XMLWriter {
+        let writer = self.init(stream: stream)
+        try! writer.push(DocumentState(writer: writer))
+        return writer
+    }
+    
+    public class func createFragment(stream: OutputStreamType) -> XMLWriter {
+        let writer = self.init(stream: stream)
+        try! writer.push(FragmentState(writer: writer))
+        return writer
+    }
+    
+    public required init(stream: OutputStreamType) {
         self.stream = stream
         self.stack = []
-        self.push(FragmentState(writer: self))
     }
     
     deinit {
-        close()
+        try! close()
     }
     
     private func top() throws -> XMLWriterState {
@@ -609,14 +640,14 @@ public class XMLWriter {
         }
     }
     
-    private func push(state: XMLWriterState) {
-        state.enter()
+    private func push(state: XMLWriterState) throws {
+        try state.enter()
         stack.append(state)
     }
     
     private func pop() throws -> XMLWriterState {
         if let state = stack.popLast() {
-            state.exit()
+            try state.exit()
             return state
         }
         else {
@@ -672,9 +703,9 @@ public class XMLWriter {
         stream.write(text)
     }
     
-    public func close() {
+    public func close() throws {
         while let state = stack.popLast() {
-            state.exit()
+            try state.exit()
         }
     }
     
@@ -692,5 +723,14 @@ public class XMLWriter {
     func translate(text: String, table: [Character: String]) -> String {
         let fragments = text.characters.map {table[$0] ?? String($0)}
         return String(fragments.flatMap {String.CharacterView($0)})
+    }
+}
+
+extension String {
+    func isEmptyOrWhiteSpace() -> Bool {
+        if self.isEmpty {
+            return true
+        }
+        return self.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet()).isEmpty
     }
 }

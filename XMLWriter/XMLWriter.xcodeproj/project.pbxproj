@@ -11,6 +11,8 @@
 		78069F901C86F8B700147923 /* XMLWriter.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 78069F851C86F8B700147923 /* XMLWriter.framework */; };
 		78069F951C86F8B700147923 /* XMLWriterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78069F941C86F8B700147923 /* XMLWriterTests.swift */; };
 		78069FA01C86F8F200147923 /* XMLWriter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78069F9F1C86F8F200147923 /* XMLWriter.swift */; };
+		78069FAA1C87559A00147923 /* OutputStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78069FA91C87559A00147923 /* OutputStream.swift */; };
+		78069FAC1C87573B00147923 /* OutputStringStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78069FAB1C87573B00147923 /* OutputStringStream.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -31,6 +33,8 @@
 		78069F941C86F8B700147923 /* XMLWriterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMLWriterTests.swift; sourceTree = "<group>"; };
 		78069F961C86F8B700147923 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		78069F9F1C86F8F200147923 /* XMLWriter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = XMLWriter.swift; sourceTree = "<group>"; };
+		78069FA91C87559A00147923 /* OutputStream.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStream.swift; sourceTree = "<group>"; };
+		78069FAB1C87573B00147923 /* OutputStringStream.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = OutputStringStream.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,8 +87,10 @@
 		78069F931C86F8B700147923 /* XMLWriterTests */ = {
 			isa = PBXGroup;
 			children = (
+				78069FA91C87559A00147923 /* OutputStream.swift */,
 				78069F941C86F8B700147923 /* XMLWriterTests.swift */,
 				78069F961C86F8B700147923 /* Info.plist */,
+				78069FAB1C87573B00147923 /* OutputStringStream.swift */,
 			);
 			path = XMLWriterTests;
 			sourceTree = "<group>";
@@ -205,6 +211,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				78069FAA1C87559A00147923 /* OutputStream.swift in Sources */,
+				78069FAC1C87573B00147923 /* OutputStringStream.swift in Sources */,
 				78069F951C86F8B700147923 /* XMLWriterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
