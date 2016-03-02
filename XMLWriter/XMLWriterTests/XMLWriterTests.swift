@@ -71,4 +71,49 @@ class XMLWriterTests: XCTestCase {
             XCTFail("Wrong exception type \(error) raised: Expected TooManyRootElements")
         }
     }
+
+    func testZeroRootElementsInFragment() {
+        // XML documents must have exactly one root element
+        let stream = OutputStringStream()
+        do {
+            let writer = XMLWriter.createFragment(stream)
+            try writer.close()
+        }
+        catch let error {
+            XCTFail("Unexpected exception: \(error)")
+        }
+        XCTAssertEqual(stream.string, "")
+    }
+    
+    func testOneRootElementInFragment() {
+        // XML documents must have exactly one root element
+        let stream = OutputStringStream()
+        do {
+            let writer = XMLWriter.createFragment(stream)
+            try writer.startElement("root")
+            try writer.endElement()
+            try writer.close()
+        }
+        catch let error {
+            XCTFail("Unexpected exception: \(error)")
+        }
+        XCTAssertEqual(stream.string, "<root />")
+    }
+    
+    func testTwoRootElementsInFragment() {
+        // XML documents must have exactly one root element
+        let stream = OutputStringStream()
+        do {
+            let writer = XMLWriter.createFragment(stream)
+            try writer.startElement("root1")
+            try writer.endElement()
+            try writer.startElement("root2")
+            try writer.endElement()
+            try writer.close()
+        }
+        catch let error {
+            XCTFail("Unexpected exception: \(error)")
+        }
+        XCTAssertEqual(stream.string, "<root1 /><root2 />")
+    }
 }

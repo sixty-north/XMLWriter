@@ -19,8 +19,6 @@ public enum XMLWriterError : ErrorType {
 
 protocol XMLWriterState
 {
-    func startDocument() throws
-    func endDocument() throws
     func startElement(name: String) throws
     func endElement() throws
     func startAttribute(name: String) throws
@@ -44,14 +42,6 @@ class FragmentState : XMLWriterState {
     
     init(writer: XMLWriter) {
         self.writer = writer
-    }
-    
-    func startDocument() throws {
-        try writer.push(DocumentState(writer: writer))
-    }
-    
-    func endDocument() throws {
-        throw XMLWriterError.BadHierarchy
     }
     
     func startElement(name: String) throws {
@@ -116,14 +106,6 @@ class DocumentState : XMLWriterState {
     init(writer: XMLWriter) {
         self.writer = writer
         self.numRootElements = 0
-    }
-    
-    func startDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
-    func endDocument() throws {
-        try writer.pop()
     }
     
     func startElement(name: String) throws {
@@ -202,14 +184,6 @@ class ElementState : XMLWriterState {
         self.writer = writer
         self.name = name
         self.isEmpty = true
-    }
-    
-    func startDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
-    func endDocument() throws {
-        throw XMLWriterError.BadHierarchy
     }
     
     func startElement(name: String) throws
@@ -314,14 +288,6 @@ class AttributeState : XMLWriterState {
         self.name = name
     }
     
-    func startDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
-    func endDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
     func startElement(name: String) throws {
         throw XMLWriterError.BadHierarchy
     }
@@ -384,14 +350,6 @@ class CommentState : XMLWriterState {
     init(writer: XMLWriter) {
         self.writer = writer
         self.previousTerminatedWithHyphen = false
-    }
-    
-    func startDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
-    func endDocument() throws {
-        throw XMLWriterError.BadHierarchy
     }
     
     func startElement(name: String) throws {
@@ -467,14 +425,6 @@ class ProcessingInstructionState : XMLWriterState {
         self.target = target
     }
     
-    func startDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
-    func endDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
     func startElement(name: String) throws {
         throw XMLWriterError.BadHierarchy
     }
@@ -536,14 +486,6 @@ class CDataState : XMLWriterState {
     
     init(writer: XMLWriter) {
         self.writer = writer
-    }
-    
-    func startDocument() throws {
-        throw XMLWriterError.BadHierarchy
-    }
-    
-    func endDocument() throws {
-        throw XMLWriterError.BadHierarchy
     }
     
     func startElement(name: String) throws {
@@ -653,14 +595,6 @@ public class XMLWriter {
         else {
             throw XMLWriterError.StackUnderflow
         }
-    }
-    
-    public func startDocument() throws {
-        try top().startDocument()
-    }
-    
-    public func endDocument() throws {
-        try top().endDocument()
     }
     
     public func startElement(name: String) throws {
